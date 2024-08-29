@@ -1,2 +1,0 @@
-[env]
-STEAM_SDK_LOCATION = { value = "steam_api_sdk", relative = true }
