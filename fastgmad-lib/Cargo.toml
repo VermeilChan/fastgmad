@@ -1,11 +1,11 @@
 [package]
 name = "fastgmad"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
-authors = ["William Venner <william@venner.io>"]
+authors = ["William Venner, VermeilChan"]
 license = "MIT OR Apache-2.0"
 description = "Fast gmad implementation"
-repository = "https://github.com/WilliamVenner/fastgmad"
+repository = "https://github.com/VermeilChan/fastgmad"
 
 [features]
 binary = ["dep:libloading", "dep:ctrlc"]
@@ -20,7 +20,6 @@ uuid = { version = "1.10.0", features = ["v4"] }
 log = "0.4.22"
 thiserror = "1.0.63"
 
-# `binary` dependencies
 ctrlc = { version = "3.4.5", optional = true }
 libloading = { version = "0.8.5", optional = true }
 
