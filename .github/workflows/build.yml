@@ -5,35 +5,34 @@ on:
     branches:
       - updated-fastgmad
 
-env:
-  CARGO_TERM_COLOR: always
-
+jobs:
   build_windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     - name: Build binary
       run: cargo build --release --package fastgmad-bin --bin fastgmad
+      env:
+        CARGO_TERM_COLOR: always
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
         name: fastgmad_windows
-        path: |
-          ./target/release/fastgmad.exe
+        path: ./target/release/fastgmad.exe
 
-jobs:
   build_linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Build binary
       run: cargo build --release --package fastgmad-bin --bin fastgmad
+      env:
+        CARGO_TERM_COLOR: always
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
         name: fastgmad_linux
-        path: |
-          ./target/release/fastgmad
+        path: ./target/release/fastgmad
 
   build_macos:
     runs-on: macos-latest
@@ -41,9 +40,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build binary
       run: cargo build --release --package fastgmad-bin --bin fastgmad
+      env:
+        CARGO_TERM_COLOR: always
     - name: Upload macOS artifacts
       uses: actions/upload-artifact@v4
       with:
         name: fastgmad_macos
-        path: |
-          ./target/release/fastgmad
+        path: ./target/release/fastgmad
