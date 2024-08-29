@@ -3,7 +3,7 @@ name: Build FastGMAD
 on:
   push:
     branches:
-      - update-fastgmaad
+      - updated-fastgmaad
 
 env:
   CARGO_TERM_COLOR: always
