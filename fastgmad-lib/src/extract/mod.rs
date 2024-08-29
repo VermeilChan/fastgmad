@@ -46,11 +46,6 @@ trait ExtractGma {
 		r: &mut (impl BufRead + IoSkip),
 		done_callback: &mut dyn FnMut(),
 	) -> Result<(), FastGmadError> {
-		if conf.out.is_dir() {
-			log::warn!(
-				"Output directory already exists; files not present in this GMA but present in the existing output directory will NOT be deleted"
-			);
-		}
 
 		std::fs::create_dir_all(&conf.out).map_err(|error| fastgmad_io_error!(while "creating output directory", error: error, path: conf.out))?;
 
