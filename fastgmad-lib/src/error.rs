@@ -9,6 +9,7 @@ pub struct FastGmadError {
 	/// An optional context string
 	pub context: Option<String>,
 }
+
 impl std::fmt::Display for FastGmadError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		if let Some(context) = &self.context {
@@ -18,6 +19,7 @@ impl std::fmt::Display for FastGmadError {
 		}
 	}
 }
+
 impl std::error::Error for FastGmadError {}
 
 /// Errors that can occur in FastGMAD
@@ -55,27 +57,8 @@ pub enum FastGmadErrorKind {
 		/// The I/O error
 		error: std::io::Error,
 	},
-
-	#[cfg(feature = "binary")]
-	#[error("Shared library error ({0})")]
-	/// Shared library error
-	Libloading(#[from] libloading::Error),
-
-	#[cfg(any(feature = "workshop", feature = "binary"))]
-	#[error("Steam error ({0})")]
-	/// Steam error during publishing
-	SteamError(String),
-
-	#[cfg(any(feature = "workshop", feature = "binary"))]
-	#[error("Icon too large")]
-	/// Icon too large
-	IconTooLarge,
-
-	#[cfg(any(feature = "workshop", feature = "binary"))]
-	#[error("Icon too small")]
-	/// Icon too small
-	IconTooSmall,
 }
+
 impl From<(PathBuf, std::io::Error)> for FastGmadErrorKind {
 	fn from((path, error): (PathBuf, std::io::Error)) -> Self {
 		Self::PathIoError { path, error }

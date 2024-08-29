@@ -18,3 +18,4 @@ path = "src/main.rs"
 
 [dependencies]
 fastgmad = { path = "../fastgmad-lib", features = ["binary"] }
+log = "0.4.22"

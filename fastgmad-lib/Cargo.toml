@@ -4,35 +4,30 @@ version = "0.2.0"
 edition = "2021"
 authors = ["William Venner <william@venner.io>"]
 license = "MIT OR Apache-2.0"
-description = "Fast gmad and gmpublish implementation"
+description = "Fast gmad implementation"
 repository = "https://github.com/WilliamVenner/fastgmad"
 
 [features]
-binary = ["dep:libloading", "dep:ctrlc", "dep:steamworks"]
-workshop = ["dep:fastgmad-publish", "dep:steamworks"]
+binary = ["dep:libloading", "dep:ctrlc"]
 
 [dependencies]
-walkdir = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-memchr = "2"
-byteorder = "1"
-uuid = { version = "1", features = ["v4"] }
-log = "0.4"
-thiserror = "1"
+walkdir = "2.5.0"
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.127"
+memchr = "2.7.4"
+byteorder = "1.5.0"
+uuid = { version = "1.10.0", features = ["v4"] }
+log = "0.4.22"
+thiserror = "1.0.63"
 
 # `binary` dependencies
-ctrlc = { version = "3", optional = true }
-libloading = { version = "0.8", optional = true }
-
-# `workshop` dependencies
-fastgmad-publish = { path = "../fastgmad-publish", optional = true }
-steamworks = { version = "0.10", optional = true }
+ctrlc = { version = "3.4.5", optional = true }
+libloading = { version = "0.8.5", optional = true }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["stringapiset"] }
+winapi = { version = "0.3.9", features = ["stringapiset"] }
 
 [dev-dependencies]
-lazy_static = "1"
+lazy_static = "1.5.0"
 sysreq = "0.1.6"
-zip = "0.6"
+zip = "2.2.0"
