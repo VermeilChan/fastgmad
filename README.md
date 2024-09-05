@@ -23,11 +23,7 @@ Windows, macOS or Linux
 ## Usage
 <!--BEGINUSAGE><!-->
 ```
-FastGMAD 
-
-Drag & Drop
------------
-Drag & drop a .gma onto fastgmad to extract it
+FastGMAD
 
 Extracting GMAs
 ---------------

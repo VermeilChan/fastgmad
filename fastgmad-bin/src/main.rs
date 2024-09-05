@@ -45,7 +45,7 @@ fn main() {
     eprintln!(concat!(
         "fastgmad v",
         env!("CARGO_PKG_VERSION"),
-        " by Billy, VermeilChan\nhttps://github.com/VermeilChan/fastgmad\n",
+        " by Billy And VermeilChan\nhttps://github.com/VermeilChan/fastgmad\n",
     ));
 
     match bin() {
