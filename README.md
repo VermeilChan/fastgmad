@@ -1,24 +1,14 @@
 <h1 align="center">⚡ fastgmad</h1>
-<p align="center"><a href="https://github.com/WilliamVenner/fastgmad/releases">Download</a></p>
+<p align="center"><a href="https://github.com/VermeilChan/fastgmad/releases">Download</a></p>
 <br/>
 
-An extremely fast reimplementation of gmad.exe and gmpublish.exe.
-
-###### Prefer to use a GUI? Check out [gmpublisher](https://github.com/WilliamVenner/gmpublisher)!
+An extremely fast reimplementation of gmad.exe.
 
 ## Features
 
-* Up to **x100 faster** than gmad.exe
-* Publish/update Workshop addons **without creating a .GMA**
-* Create, extract and publish GMAs **all in one tool**
-* Upload addon icons in PNG, JPG or **even GIF format**
-* Drop-in replacement for gmad.exe and gmpublish.exe - **usage is identical**
-* Publish without specifying an icon if you're feeling lazy
-* `-stdin` and `-stdout` support for piping data between tools
-
-## Requirements
-
-Windows, macOS or Linux
+- Up to **x100 faster** than gmad.exe
+- Extract GMAs.
+- Drop-in replacement for gmad.exe. - **usage is identical**
 
 ## Usage
 <!--BEGINUSAGE><!-->
