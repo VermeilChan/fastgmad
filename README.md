@@ -1,4 +1,4 @@
-<h1 align="center">⚡ fastgmad</h1>
+<h1 align="center">⚡ FastGMAD</h1>
 <p align="center"><a href="https://github.com/VermeilChan/fastgmad/releases">Download</a></p>
 <br/>
 
@@ -8,7 +8,7 @@ An extremely fast reimplementation of gmad.exe.
 
 - Up to **x100 faster** than gmad.exe
 - Extract GMAs.
-- Drop-in replacement for gmad.exe. - **usage is identical**
+- Drop-in replacement for gmad.exe.
 
 ## Usage
 <!--BEGINUSAGE><!-->
