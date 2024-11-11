@@ -6,49 +6,61 @@ on:
       - updated-fastgmad
 
 jobs:
+  get_shortened_commit_sha:
+    runs-on: ubuntu-latest
+    outputs:
+      shortened_commit_sha: ${{ steps.shorten_commit_sha.outputs.shortened_commit_sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Shortened Commit SHA
+        id: shorten_commit_sha
+        uses: iendeavor/shorten-commit-sha@v2.0.0
+        with:
+          length: 7
+
   build_windows:
     runs-on: windows-latest
+    needs: get_shortened_commit_sha
     steps:
-    - uses: actions/checkout@v4
-    - name: Build binary
-      run: cargo build --release --package fastgmad-bin --bin fastgmad
-      env:
-        CARGO_TERM_COLOR: always
-    - name: Get Shortened Commit SHA
-      id: shorten_commit_sha
-      uses: iendeavor/shorten-commit-sha@v2.0.0
-      with:
-        length: 7
-    - name: Upload Windows artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: FastGMAD-${{ steps.shorten_commit_sha.outputs.shortened_commit_sha }}-Windows-x64
-        path: ./target/release/fastgmad.exe
+      - uses: actions/checkout@v4
+      - name: Build binary
+        run: cargo build --release --package fastgmad-bin --bin fastgmad
+        env:
+          CARGO_TERM_COLOR: always
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-Windows-x64
+          path: ./target/release/fastgmad.exe
 
   build_linux:
     runs-on: ubuntu-latest
+    needs: get_shortened_commit_sha
     steps:
-    - uses: actions/checkout@v4
-    - name: Build binary
-      run: cargo build --release --package fastgmad-bin --bin fastgmad
-      env:
-        CARGO_TERM_COLOR: always
-    - name: Upload Linux artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: FastGMAD-${{ steps.shorten_commit_sha.outputs.shortened_commit_sha }}-Linux-x64
-        path: ./target/release/fastgmad
+      - uses: actions/checkout@v4
+      - name: Build binary
+        run: cargo build --release --package fastgmad-bin --bin fastgmad
+        env:
+          CARGO_TERM_COLOR: always
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-Linux-x64
+          path: ./target/release/fastgmad
 
   build_macos:
     runs-on: macos-latest
+    needs: get_shortened_commit_sha
     steps:
-    - uses: actions/checkout@v4
-    - name: Build binary
-      run: cargo build --release --package fastgmad-bin --bin fastgmad
-      env:
-        CARGO_TERM_COLOR: always
-    - name: Upload macOS artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: FastGMAD-${{ steps.shorten_commit_sha.outputs.shortened_commit_sha }}-macOS-Arm64
-        path: ./target/release/fastgmad
+      - uses: actions/checkout@v4
+      - name: Build binary
+        run: cargo build --release --package fastgmad-bin --bin fastgmad
+        env:
+          CARGO_TERM_COLOR: always
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-macOS-Arm64
+          path: ./target/release/fastgmad
