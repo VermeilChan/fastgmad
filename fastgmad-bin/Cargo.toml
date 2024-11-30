@@ -7,6 +7,18 @@ license = "MIT OR Apache-2.0"
 description = "Fast gmad implementation"
 repository = "https://github.com/VermeilChan/fastgmad"
 publish = false
+resolver = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+incremental = false
+debug = false
+debug-assertions = false
+overflow-checks = false
 
 [features]
 default = ["binary"]

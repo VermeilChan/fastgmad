@@ -6,6 +6,18 @@ authors = ["William Venner, VermeilChan"]
 license = "MIT OR Apache-2.0"
 description = "Fast gmad implementation"
 repository = "https://github.com/VermeilChan/fastgmad"
+resolver = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+incremental = false
+debug = false
+debug-assertions = false
+overflow-checks = false
 
 [features]
 binary = ["dep:libloading", "dep:ctrlc"]
@@ -21,7 +33,7 @@ log = "0.4.22"
 thiserror = "2.0.3"
 
 ctrlc = { version = "3.4.5", optional = true }
-libloading = { version = "0.8.5", optional = true }
+libloading = { version = "0.8.6", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["stringapiset"] }
