@@ -16,7 +16,7 @@ jobs:
 
       - name: Get Shortened Commit SHA
         id: shorten_commit_sha
-        uses: iendeavor/shorten-commit-sha@v2.0.0
+        uses: iendeavor/shorten-commit-sha@v2.0.3
         with:
           length: 7
 
