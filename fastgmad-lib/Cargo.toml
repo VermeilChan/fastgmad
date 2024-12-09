@@ -8,17 +8,6 @@ description = "Fast gmad implementation"
 repository = "https://github.com/VermeilChan/fastgmad"
 resolver = "2"
 
-[profile.release]
-opt-level = 3
-lto = "thin"
-codegen-units = 1
-panic = "abort"
-strip = true
-incremental = false
-debug = false
-debug-assertions = false
-overflow-checks = false
-
 [features]
 binary = ["dep:libloading", "dep:ctrlc"]
 
@@ -30,7 +19,7 @@ memchr = "2.7.4"
 byteorder = "1.5.0"
 uuid = { version = "1.11.0", features = ["v4"] }
 log = "0.4.22"
-thiserror = "2.0.3"
+thiserror = "2.0.6"
 
 ctrlc = { version = "3.4.5", optional = true }
 libloading = { version = "0.8.6", optional = true }
