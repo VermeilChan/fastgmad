@@ -1,6 +1,6 @@
 [package]
 name = "fastgmad"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 authors = ["William Venner, VermeilChan"]
 license = "MIT OR Apache-2.0"
@@ -14,11 +14,11 @@ binary = ["dep:libloading", "dep:ctrlc"]
 [dependencies]
 walkdir = "2.5.0"
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.135"
+serde_json = "1.0.137"
 memchr = "2.7.4"
 byteorder = "1.5.0"
-uuid = { version = "1.11.1", features = ["v4"] }
-log = "0.4.22"
+uuid = { version = "1.12.1", features = ["v4"] }
+log = "0.4.25"
 thiserror = "2.0.11"
 
 ctrlc = { version = "3.4.5", optional = true }
