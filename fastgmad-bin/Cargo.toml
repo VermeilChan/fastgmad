@@ -1,6 +1,6 @@
 [package]
 name = "fastgmad-bin"
-version = "0.2.8"
+version = "0.2.9"
 edition = "2024"
 authors = ["William Venner, VermeilChan"]
 license = "MIT OR Apache-2.0"
@@ -19,4 +19,4 @@ path = "src/main.rs"
 
 [dependencies]
 fastgmad = { path = "../fastgmad-lib", features = ["binary"] }
-log = "0.4.26"
+log = "0.4.27"
