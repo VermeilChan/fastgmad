@@ -12,11 +12,11 @@ jobs:
       shortened_commit_sha: ${{ steps.shorten_commit_sha.outputs.shortened_commit_sha }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get Shortened Commit SHA
         id: shorten_commit_sha
-        uses: iendeavor/shorten-commit-sha@v2.0.4
+        uses: soc221b/shorten-commit-sha@v2.0.5
         with:
           length: 7
 
@@ -24,13 +24,13 @@ jobs:
     runs-on: windows-latest
     needs: get_shortened_commit_sha
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build binary
         run: cargo build --release --package fastgmad-bin --bin fastgmad
         env:
           CARGO_TERM_COLOR: always
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-Windows-x64
           path: ./target/release/fastgmad.exe
@@ -39,13 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: get_shortened_commit_sha
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build binary
         run: cargo build --release --package fastgmad-bin --bin fastgmad
         env:
           CARGO_TERM_COLOR: always
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-Linux-x64
           path: ./target/release/fastgmad
@@ -54,13 +54,13 @@ jobs:
     runs-on: macos-latest
     needs: get_shortened_commit_sha
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build binary
         run: cargo build --release --package fastgmad-bin --bin fastgmad
         env:
           CARGO_TERM_COLOR: always
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FastGMAD-${{ needs.get_shortened_commit_sha.outputs.shortened_commit_sha }}-macOS-ARM64
           path: ./target/release/fastgmad
