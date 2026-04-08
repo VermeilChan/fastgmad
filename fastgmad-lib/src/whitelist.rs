@@ -74,6 +74,7 @@ const ADDON_WHITELIST: &[&str] = &[
 	"data_static/*.json",
 	"data_static/*.xml",
 	"data_static/*.csv",
+	"shaders/fxc/*.vcs",
 ];
 
 const WILD_BYTE: u8 = b'*';
