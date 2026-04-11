@@ -1,5 +1,4 @@
 <h1 align="center">⚡ FastGMAD</h1>
-<p align="center"><a href="https://github.com/VermeilChan/fastgmad/releases">Download</a></p>
 <br/>
 
 An extremely fast reimplementation of gmad.exe.

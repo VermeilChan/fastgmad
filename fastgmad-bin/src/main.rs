@@ -42,12 +42,6 @@ fn main() {
     })
     .unwrap();
 
-    eprintln!(concat!(
-        "fastgmad v",
-        env!("CARGO_PKG_VERSION"),
-        " by Billy And VermeilChan\nhttps://github.com/VermeilChan/fastgmad\n",
-    ));
-
     match bin() {
         Ok(()) => {}
         Err(FastGmadBinError::FastGmadError(err)) => {
