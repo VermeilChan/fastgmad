@@ -98,7 +98,7 @@ fn extract(
 ) -> Result<(), FastGmadBinError> {
     match r#in {
         ExtractGmadIn::File(path) => {
-            log::info!("Opening input file...");
+            log::debug!("Opening input file...");
             let mut r = BufReader::new(File::open(&path).map_err(|error| FastGmadError {
                 kind: FastGmadErrorKind::PathIoError { path, error },
                 context: Some("opening input file".to_string()),
@@ -111,6 +111,8 @@ fn extract(
             fastgmad::extract::extract_gma_with_done_callback(&conf, &mut r, exit)?;
         }
     }
+    
+    log::debug!("Finished");
     Ok(())
 }
 
