@@ -14,11 +14,11 @@ binary = ["dep:libloading", "dep:ctrlc"]
 [dependencies]
 walkdir = "2.5.0"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-memchr = "2.8.0"
+serde_json = "1.0.150"
+memchr = "2.8.3"
 byteorder = "1.5.0"
-uuid = { version = "1.22.0", features = ["v4"] }
-log = "0.4.29"
+uuid = { version = "1.24.0", features = ["v4"] }
+log = "0.4.33"
 thiserror = "2.0.18"
 
 ctrlc = { version = "3.5.2", optional = true }
@@ -30,4 +30,4 @@ winapi = { version = "0.3.9", features = ["stringapiset"] }
 [dev-dependencies]
 lazy_static = "1.5.0"
 sysreq = "0.1.7"
-zip = "8.4.0"
+zip = "8.6.0"
