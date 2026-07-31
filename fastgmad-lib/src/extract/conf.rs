@@ -1,4 +1,5 @@
 use std::{num::NonZeroUsize, path::PathBuf};
+#[cfg(feature = "binary")]
 use crate::util::PrintHelp;
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub enum ExtractGmadIn {
 }
 
 const DEFAULT_THREADS: NonZeroUsize = NonZeroUsize::new(1).expect("1 is non-zero");
-const DEFAULT_MEMORY: NonZeroUsize = NonZeroUsize::new(1 << 31).expect("2GB is non-zero"); // 2 GiB
+const DEFAULT_MEMORY: NonZeroUsize = NonZeroUsize::new(1 << 31).expect("2GB is non-zero");
 
 impl Default for ExtractGmaConfig {
     fn default() -> Self {
