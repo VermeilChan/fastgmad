@@ -46,7 +46,7 @@ pub trait IoSkip {
 impl IoSkip for BufReader<File> {
     fn skip(&mut self, bytes: u64) -> Result<(), std::io::Error> {
         let pos = self.stream_position()?;
-        self.seek(SeekFrom::Start(pos + bytes))?;
+        self.seek(SeekFrom::Start(pos.saturating_add(bytes)))?;
         Ok(())
     }
 }
@@ -66,13 +66,19 @@ impl IoSkip for StdinLock<'_> {
 
 #[cfg(windows)]
 pub fn ansi_to_wide(ansi: &[u8]) -> Result<Vec<u16>, std::io::Error> {
+    if ansi.is_empty() {
+        return Ok(Vec::new());
+    }
+
     use winapi::um::{stringapiset::MultiByteToWideChar, winnls::CP_ACP};
 
+    // Get the required buffer size.
     let required_size = unsafe { MultiByteToWideChar(CP_ACP, 0, ansi.as_ptr() as *const i8, ansi.len() as i32, core::ptr::null_mut(), 0) };
     if required_size == 0 {
         return Err(std::io::Error::last_os_error());
     }
 
+    // Convert the ANSI string to wide string.
     let mut wide = vec![0u16; required_size as usize];
     let ret = unsafe { MultiByteToWideChar(CP_ACP, 0, ansi.as_ptr() as *const i8, ansi.len() as i32, wide.as_mut_ptr(), required_size) };
     if ret == 0 {

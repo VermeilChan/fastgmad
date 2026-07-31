@@ -150,10 +150,10 @@ trait ExtractGma {
                 )
             };
             res.map_err(|error| {
-                if let Some(io_error) = error.io_error_kind() {
-                    fastgmad_io_error!(while "writing addon.json", error: std::io::Error::from(io_error), path: addon_json_path)
-                } else {
-                    fastgmad_error!(while "serializing addon.json", error: error)
+                use serde_json::error::Category;
+                match error.classify() {
+                    Category::Io => fastgmad_io_error!(while "writing addon.json", error: std::io::Error::from(error), path: addon_json_path),
+                    _ => fastgmad_error!(while "serializing addon.json", error: error),
                 }
             })?;
             addon_json_f
@@ -200,14 +200,14 @@ trait ExtractGma {
             &file_index,
         )?;
 
-        // Explicitly free memory here
-        // We may exit the process in done_callback (thereby allowing the OS to free the memory),
-        // so make sure the optimiser knows to free all the memory here.
-        done_callback();
+        // Explicitly free memory here BEFORE we potentially exit the process
         drop(addon_json_path);
         drop(addon_json);
         drop(file_index);
         drop(buf);
+
+        // Now call the callback (which might exit the process)
+        done_callback();
 
         Ok(())
     }
@@ -287,9 +287,13 @@ impl ExtractGma for ParallelExtractGma {
 
             for GmaEntry { path, size } in file_index.iter() {
                 // Break early if an error occurs
-                match error.try_lock().as_deref() {
-                    Ok(None) => {}
-                    Ok(Some(_)) | Err(std::sync::TryLockError::WouldBlock) => break,
+                match error.try_lock() {
+                    Ok(guard) => {
+                        if guard.is_some() {
+                            break;
+                        }
+                    }
+                    Err(std::sync::TryLockError::WouldBlock) => break,
                     Err(err @ std::sync::TryLockError::Poisoned(_)) => Err(err).unwrap(),
                 }
 
@@ -441,8 +445,11 @@ impl GmaEntry {
 
         let path = path.and_then(|path| {
             let path = Path::new(&path);
-            if path.components().any(|c| matches!(c, Component::ParentDir | Component::Prefix(_))) {
+            if path.components().any(|c| matches!(c, Component::ParentDir | Component::RootDir | Component::Prefix(_))) {
                 log::warn!("Skipping GMA entry with invalid file path: {:?}", path);
+                None
+            } else if path.as_os_str().is_empty() {
+                log::warn!("Skipping GMA entry with empty file path");
                 None
             } else {
                 Some(base_path.join(path))

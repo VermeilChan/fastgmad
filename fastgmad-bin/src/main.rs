@@ -47,7 +47,7 @@ fn main() {
         Err(FastGmadBinError::FastGmadError(err)) => {
             eprintln!();
             log::error!("{err}\n");
-            Err::<(), _>(err).unwrap();
+            std::process::exit(1);
         }
         Err(FastGmadBinError::PrintHelp(msg)) => {
             if let Some(msg) = msg {
