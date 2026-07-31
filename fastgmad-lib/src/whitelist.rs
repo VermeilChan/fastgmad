@@ -77,80 +77,47 @@ const ADDON_WHITELIST: &[&str] = &[
     "shaders/fxc/*.vcs",
 ];
 
-const WILD_BYTE: u8 = b'*';
-const QUESTION_BYTE: u8 = b'?';
+fn globber(wild: &[u8], path: &[u8]) -> bool {
+    let mut w = 0;
+    let mut p = 0;
+    let mut star_w = usize::MAX;
+    let mut star_p = 0;
 
-fn globber(wild: &str, path: &str) -> bool {
-    unsafe {
-        let mut cp: *const u8 = core::ptr::null();
-        let mut mp: *const u8 = core::ptr::null();
-
-        let (mut wild, wild_max) = (wild.as_ptr(), wild.as_ptr().add(wild.len()));
-        let (mut str, str_max) = (path.as_ptr(), path.as_ptr().add(path.len()));
-
-        while wild < wild_max && str < str_max && *wild != WILD_BYTE {
-            if *wild != *str && *wild != QUESTION_BYTE {
-                return false;
-            }
-            wild = wild.add(1);
-            str = str.add(1);
+    while p < path.len() {
+        if w < wild.len() && (wild[w] == path[p] || wild[w] == b'?') {
+            w += 1;
+            p += 1;
+        } else if w < wild.len() && wild[w] == b'*' {
+            star_w = w;
+            star_p = p;
+            w += 1;
+        } else if star_w != usize::MAX {
+            w = star_w + 1;
+            star_p += 1;
+            p = star_p;
+        } else {
+            return false;
         }
-
-        while str < str_max {
-            if *wild == WILD_BYTE {
-                wild = wild.add(1);
-                if wild >= wild_max {
-                    return true;
-                }
-                mp = wild;
-                cp = str.add(1);
-            } else if *wild == *str || *wild == QUESTION_BYTE {
-                wild = wild.add(1);
-                str = str.add(1);
-            } else {
-                wild = mp;
-                str = cp;
-                cp = cp.add(1);
-            }
-        }
-
-        while wild < wild_max && *wild == WILD_BYTE {
-            wild = wild.add(1);
-        }
-
-        wild >= wild_max
     }
+
+    while w < wild.len() && wild[w] == b'*' {
+        w += 1;
+    }
+
+    w == wild.len()
 }
 
-/// Check if a path is allowed in a GMA file
 pub fn check(path: &str) -> bool {
-    for glob in ADDON_WHITELIST {
-        if globber(glob, path) {
-            return true;
-        }
-    }
-
-    false
+    ADDON_WHITELIST.iter().any(|glob| globber(glob.as_bytes(), path.as_bytes()))
 }
 
-/// Check if a path is ignored by a list of custom globs
 pub fn is_ignored(path: &str, ignore: &[String]) -> bool {
-    if ignore.is_empty() {
-        return false;
-    }
-
-    for glob in ignore {
-        if globber(glob, path) {
-            return true;
-        }
-    }
-
-    false
+    !ignore.is_empty() && ignore.iter().any(|glob| globber(glob.as_bytes(), path.as_bytes()))
 }
 
 #[test]
 pub fn test_whitelist() {
-    let good: &[&str] = &[
+    let good = &[
         "lua/test.lua",
         "lua/lol/test.lua",
         "lua/lua/testing.lua",
@@ -160,8 +127,7 @@ pub fn test_whitelist() {
         "gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
         "gamemodes/my_base_defence/backgrounds/1.jpg",
     ];
-
-    let bad: &[&str] = &[
+    let bad = &[
         "test.lua",
         "lua/test.exe",
         "lua/lol/test.exe",
@@ -172,28 +138,16 @@ pub fn test_whitelist() {
         "materials/lol.vvv",
     ];
 
-    for good in good {
-        assert!(check(&*good), "{}", good);
-    }
-
-    for good in ADDON_WHITELIST {
-        assert!(check(&good.replace('*', "test")));
-    }
-
-    for good in ADDON_WHITELIST {
-        assert!(check(&good.replace('*', "a")));
-    }
-
-    for bad in bad {
-        assert!(!check(&*bad));
-    }
+    for good in good { assert!(check(good), "{}", good); }
+    for good in ADDON_WHITELIST { assert!(check(&good.replace('*', "test"))); assert!(check(&good.replace('*', "a"))); }
+    for bad in bad { assert!(!check(bad)); }
 }
 
 #[test]
 pub fn test_ignore() {
-    assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt".to_string()]));
-    assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*.lua".to_string()]));
-    assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*".to_string()]));
-    assert!(is_ignored(&".gitattributes".to_string(), &[".git*".to_string()]));
-    assert!(!is_ignored(&"lol.txt".to_string(), &[]));
+    assert!(is_ignored("lol.txt", &["lol.txt".to_string()]));
+    assert!(is_ignored("lua/hello.lua", &["lua/*.lua".to_string()]));
+    assert!(is_ignored("lua/hello.lua", &["lua/*".to_string()]));
+    assert!(is_ignored(".gitattributes", &[".git*".to_string()]));
+    assert!(!is_ignored("lol.txt", &[]));
 }

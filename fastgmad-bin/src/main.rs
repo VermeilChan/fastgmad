@@ -1,7 +1,5 @@
-#![allow(clippy::unnecessary_literal_unwrap)]
-
 use fastgmad::extract::{ExtractGmaConfig, ExtractGmadIn};
-use fastgmad::error::{FastGmadError, FastGmadErrorKind};
+use fastgmad::error::FastGmadError;
 use std::{
     ffi::OsStr,
     fs::File,
@@ -13,34 +11,20 @@ use std::{
 fn main() {
     log::set_logger({
         log::set_max_level(log::LevelFilter::Info);
-
         struct Logger(Instant);
         impl log::Log for Logger {
-            fn enabled(&self, metadata: &log::Metadata) -> bool {
-                metadata.level() <= log::Level::Info
-            }
-
+            fn enabled(&self, metadata: &log::Metadata) -> bool { metadata.level() <= log::Level::Info }
             fn log(&self, record: &log::Record) {
-                let level = match record.level() {
-                    log::Level::Info => {
-                        eprintln!("[+{:?}] {}", self.0.elapsed(), record.args());
-                        return;
-                    }
-                    log::Level::Warn => "WARN: ",
-                    log::Level::Error => "ERROR: ",
-                    log::Level::Debug => "DEBUG: ",
-                    log::Level::Trace => "TRACE: ",
-                };
-                eprintln!("{level}{}", record.args());
+                if record.level() == log::Level::Info {
+                    eprintln!("[+{:?}] {}", self.0.elapsed(), record.args());
+                } else {
+                    eprintln!("{}{}", record.level().as_str().chars().next().unwrap_or(' '), record.args());
+                }
             }
-
-            fn flush(&self) {
-                std::io::stderr().lock().flush().ok();
-            }
+            fn flush(&self) { std::io::stderr().lock().flush().ok(); }
         }
         Box::leak(Box::new(Logger(Instant::now())))
-    })
-    .unwrap();
+    }).unwrap();
 
     match bin() {
         Ok(()) => {}
@@ -50,10 +34,7 @@ fn main() {
             std::process::exit(1);
         }
         Err(FastGmadBinError::PrintHelp(msg)) => {
-            if let Some(msg) = msg {
-                log::error!("{msg}\n");
-            }
-
+            if let Some(msg) = msg { log::error!("{msg}\n"); }
             eprintln!("{}", include_str!("usage.txt"));
         }
     }
@@ -70,13 +51,8 @@ fn bin() -> Result<(), FastGmadBinError> {
     let path = Path::new(&cmd);
 
     if path.is_file() && path.extension() == Some(OsStr::new("gma")) {
-        // The first argument is a path to a GMA
-        // Extract it
         extract(
-            ExtractGmaConfig {
-                out: path.with_extension(""),
-                ..Default::default()
-            },
+            ExtractGmaConfig { out: path.with_extension(""), ..Default::default() },
             ExtractGmadIn::File(PathBuf::from(cmd)),
             &mut exit,
         )
@@ -91,28 +67,17 @@ fn bin() -> Result<(), FastGmadBinError> {
     }
 }
 
-fn extract(
-    conf: ExtractGmaConfig,
-    r#in: ExtractGmadIn,
-    exit: &mut impl FnMut(),
-) -> Result<(), FastGmadBinError> {
+fn extract(conf: ExtractGmaConfig, r#in: ExtractGmadIn, exit: &mut impl FnMut()) -> Result<(), FastGmadBinError> {
     match r#in {
         ExtractGmadIn::File(path) => {
-            log::debug!("Opening input file...");
-            let mut r = BufReader::new(File::open(&path).map_err(|error| FastGmadError {
-                kind: FastGmadErrorKind::PathIoError { path, error },
-                context: Some("opening input file".to_string()),
-            })?);
+            let mut r = BufReader::new(File::open(&path).map_err(|error| FastGmadError::io(error, "opening input file", Some(&path)))?);
             fastgmad::extract::extract_gma_with_done_callback(&conf, &mut r, exit)?;
         }
-
         ExtractGmadIn::Stdin => {
             let mut r = std::io::stdin().lock();
             fastgmad::extract::extract_gma_with_done_callback(&conf, &mut r, exit)?;
         }
     }
-    
-    log::debug!("Finished");
     Ok(())
 }
 
@@ -122,7 +87,5 @@ enum FastGmadBinError {
 }
 
 impl From<FastGmadError> for FastGmadBinError {
-    fn from(e: FastGmadError) -> Self {
-        Self::FastGmadError(e)
-    }
+    fn from(e: FastGmadError) -> Self { Self::FastGmadError(e) }
 }
