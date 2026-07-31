@@ -9,10 +9,7 @@ use std::{
     fs::File,
     io::{BufRead, BufWriter, Read, Write},
     path::{Component, Path, PathBuf},
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Condvar, Mutex,
-    },
+    sync::{Condvar, Mutex},
 };
 
 mod conf;
@@ -20,18 +17,16 @@ pub use conf::ExtractGmaConfig;
 #[cfg(feature = "binary")]
 pub use conf::{ExtractGmadIn, PrintHelp};
 
-#[inline]
 fn read_u32_le(r: &mut impl BufRead) -> std::io::Result<u32> {
     let mut buf = [0u8; 4];
     r.read_exact(&mut buf)?;
     Ok(u32::from_le_bytes(buf))
 }
 
-#[inline]
-fn read_i64_le(r: &mut impl BufRead) -> std::io::Result<i64> {
+fn read_u64_le(r: &mut impl BufRead) -> std::io::Result<u64> {
     let mut buf = [0u8; 8];
     r.read_exact(&mut buf)?;
-    Ok(i64::from_le_bytes(buf))
+    Ok(u64::from_le_bytes(buf))
 }
 
 pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), FastGmadError> {
@@ -92,7 +87,7 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
     log::debug!("Writing addon.json...");
     let addon_json_path = conf.out.join("addon.json");
     {
-        let mut addon_json_f = BufWriter::new(
+        let mut f = BufWriter::new(
             File::create(&addon_json_path)
                 .map_err(|e| FastGmadError::io(e, "creating addon.json file", Some(&addon_json_path)))?,
         );
@@ -102,10 +97,10 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
         {
             kv.entry("title".to_string())
                 .or_insert_with(|| serde_json::Value::String(String::from_utf8_lossy(&title).into_owned()));
-            serde_json::to_writer_pretty(&mut addon_json_f, &kv)
+            serde_json::to_writer_pretty(&mut f, &kv)
         } else {
             serde_json::to_writer_pretty(
-                &mut addon_json_f,
+                &mut f,
                 &StubAddonJson {
                     title: String::from_utf8_lossy(&title),
                     description: String::from_utf8_lossy(&addon_json),
@@ -113,8 +108,7 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
             )
         };
         res.map_err(|e| FastGmadError::io(std::io::Error::from(e), "writing addon.json", Some(&addon_json_path)))?;
-        addon_json_f
-            .flush()
+        f.flush()
             .map_err(|e| FastGmadError::io(e, "flushing addon.json", Some(&addon_json_path)))?;
     }
 
@@ -125,7 +119,7 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
             .read_nul_str(&mut buf)
             .map_err(|e| FastGmadError::io(e, "reading entry path", None))?
             .to_vec();
-        let size = read_i64_le(r).map_err(|e| FastGmadError::io(e, "reading entry size", None))?;
+        let size = read_u64_le(r).map_err(|e| FastGmadError::io(e, "reading entry size", None))?;
         r.skip(4)
             .map_err(|e| FastGmadError::io(e, "reading entry CRC", None))?;
         file_index.push(GmaEntry::new(&conf.out, path, size)?);
@@ -133,7 +127,7 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
 
     log::debug!("Extracting entries...");
     if conf.max_io_threads.get() == 1 {
-        write_entries_sequential(r, &file_index, conf)?;
+        write_entries_sequential(r, &file_index)?;
     } else {
         write_entries_parallel(conf, r, &file_index)?;
     }
@@ -141,25 +135,22 @@ pub fn extract_gma(conf: &ExtractGmaConfig, r: &mut impl BufRead) -> Result<(), 
     Ok(())
 }
 
-fn write_entry_streaming(
-    conf: &ExtractGmaConfig,
-    r: &mut impl BufRead,
-    path: &Path,
-    size: usize,
-) -> Result<(), FastGmadError> {
+fn create_parent_dirs(path: &Path) -> Result<(), FastGmadError> {
     if let Some(parent) = path.parent() {
-        if parent != conf.out {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| FastGmadError::io(e, "creating directory for GMA entry", Some(parent)))?;
-        }
+        std::fs::create_dir_all(parent)
+            .map_err(|e| FastGmadError::io(e, "creating directory for GMA entry", Some(parent)))?;
     }
+    Ok(())
+}
+
+fn write_entry_streaming(r: &mut impl BufRead, path: &Path, size: usize) -> Result<(), FastGmadError> {
+    create_parent_dirs(path)?;
 
     let mut w = BufWriter::new(
         File::create(path).map_err(|e| FastGmadError::io(e, "creating file for GMA entry", Some(path)))?,
     );
 
-    let mut take = (&mut *r).take(size as u64);
-    let copied = std::io::copy(&mut take, &mut w)
+    let copied = std::io::copy(&mut (&mut *r).take(size as u64), &mut w)
         .map_err(|e| FastGmadError::io(e, "copying GMA entry data", Some(path)))?;
     if copied != size as u64 {
         return Err(FastGmadError::io(
@@ -174,14 +165,10 @@ fn write_entry_streaming(
     Ok(())
 }
 
-fn write_entries_sequential(
-    r: &mut impl BufRead,
-    file_index: &[GmaEntry],
-    conf: &ExtractGmaConfig,
-) -> Result<(), FastGmadError> {
+fn write_entries_sequential(r: &mut impl BufRead, file_index: &[GmaEntry]) -> Result<(), FastGmadError> {
     for GmaEntry { path, size } in file_index {
         match path {
-            Some(p) => write_entry_streaming(conf, r, p, *size)?,
+            Some(p) => write_entry_streaming(r, p, *size)?,
             None => {
                 r.skip(*size as u64)
                     .map_err(|e| FastGmadError::io(e, "skipping past GMA entry data", None))?;
@@ -196,18 +183,34 @@ fn write_entries_parallel(
     r: &mut impl BufRead,
     file_index: &[GmaEntry],
 ) -> Result<(), FastGmadError> {
-    let queue: Mutex<VecDeque<(PathBuf, Vec<u8>)>> = Mutex::new(VecDeque::new());
-    let queue_cv = Condvar::new();
-    let error: Mutex<Option<FastGmadError>> = Mutex::new(None);
-    let mem_used: Mutex<usize> = Mutex::new(0);
-    let mem_cv = Condvar::new();
-    let producer_done = AtomicBool::new(false);
+    struct State {
+        queue: VecDeque<(PathBuf, Vec<u8>)>,
+        mem_used: usize,
+        error: Option<FastGmadError>,
+        producer_done: bool,
+    }
 
-    struct ProducerGuard<'a>(&'a AtomicBool, &'a Condvar);
+    let state = Mutex::new(State {
+        queue: VecDeque::new(),
+        mem_used: 0,
+        error: None,
+        producer_done: false,
+    });
+    let queue_cv = Condvar::new();
+    let mem_cv = Condvar::new();
+
+    struct ProducerGuard<'a> {
+        state: &'a Mutex<State>,
+        queue_cv: &'a Condvar,
+        mem_cv: &'a Condvar,
+    }
     impl Drop for ProducerGuard<'_> {
         fn drop(&mut self) {
-            self.0.store(true, Ordering::Release);
-            self.1.notify_all();
+            let mut s = self.state.lock().unwrap();
+            s.producer_done = true;
+            drop(s);
+            self.queue_cv.notify_all();
+            self.mem_cv.notify_all();
         }
     }
 
@@ -216,53 +219,53 @@ fn write_entries_parallel(
             s.spawn(|| {
                 loop {
                     let (path, buf) = {
-                        let mut q = queue.lock().unwrap();
+                        let mut s = state.lock().unwrap();
                         loop {
-                            if error.lock().unwrap().is_some() {
+                            if s.error.is_some() || (s.producer_done && s.queue.is_empty()) {
                                 return;
                             }
-                            if let Some(item) = q.pop_front() {
+                            if let Some(item) = s.queue.pop_front() {
                                 break item;
                             }
-                            if producer_done.load(Ordering::Acquire) {
-                                return;
-                            }
-                            q = queue_cv.wait(q).unwrap();
+                            s = queue_cv.wait(s).unwrap();
                         }
                     };
 
-                    let res = (|| {
-                        if let Some(parent) = path.parent() {
-                            if parent != conf.out {
-                                std::fs::create_dir_all(parent).map_err(|e| {
-                                    FastGmadError::io(e, "creating directory for GMA entry", Some(parent))
-                                })?;
-                            }
-                        }
+                    let res = create_parent_dirs(&path).and_then(|()| {
                         std::fs::write(&path, &buf)
                             .map_err(|e| FastGmadError::io(e, "writing GMA entry file", Some(&path)))
-                    })();
+                    });
+
+                    let is_err = res.is_err();
 
                     {
-                        let mut mem = mem_used.lock().unwrap();
-                        *mem -= buf.len();
+                        let mut s = state.lock().unwrap();
+                        s.mem_used -= buf.len();
+                        if let Err(e) = res {
+                            s.error.get_or_insert(e);
+                        }
+                        drop(s);
                         mem_cv.notify_one();
+                        if is_err {
+                            queue_cv.notify_all();
+                        }
                     }
 
-                    if let Err(e) = res {
-                        *error.lock().unwrap() = Some(e);
-                        queue_cv.notify_all();
-                        mem_cv.notify_one();
+                    if is_err {
                         return;
                     }
                 }
             });
         }
 
-        let _guard = ProducerGuard(&producer_done, &queue_cv);
+        let _guard = ProducerGuard {
+            state: &state,
+            queue_cv: &queue_cv,
+            mem_cv: &mem_cv,
+        };
 
         for GmaEntry { path, size } in file_index {
-            if error.lock().unwrap().is_some() {
+            if state.lock().unwrap().error.is_some() {
                 break;
             }
 
@@ -276,28 +279,30 @@ fn write_entries_parallel(
             };
 
             if *size > conf.max_io_memory_usage.get() {
-                write_entry_streaming(conf, r, &path, *size)?;
+                write_entry_streaming(r, &path, *size)?;
                 continue;
             }
 
             if *size == 0 {
-                queue.lock().unwrap().push_back((path, Vec::new()));
+                let mut s = state.lock().unwrap();
+                s.queue.push_back((path, Vec::new()));
+                drop(s);
                 queue_cv.notify_one();
                 continue;
             }
 
             {
-                let mut mem = mem_used.lock().unwrap();
-                while *mem + *size > conf.max_io_memory_usage.get() {
-                    if error.lock().unwrap().is_some() {
+                let mut s = state.lock().unwrap();
+                while s.mem_used.saturating_add(*size) > conf.max_io_memory_usage.get() {
+                    if s.error.is_some() {
                         break;
                     }
-                    mem = mem_cv.wait(mem).unwrap();
+                    s = mem_cv.wait(s).unwrap();
                 }
-                if error.lock().unwrap().is_some() {
+                if s.error.is_some() {
                     break;
                 }
-                *mem += *size;
+                s.mem_used += *size;
             }
 
             let mut buf = Vec::with_capacity(*size);
@@ -312,14 +317,18 @@ fn write_entries_parallel(
                 ));
             }
 
-            queue.lock().unwrap().push_back((path, buf));
-            queue_cv.notify_one();
+            {
+                let mut s = state.lock().unwrap();
+                s.queue.push_back((path, buf));
+                drop(s);
+                queue_cv.notify_one();
+            }
         }
 
         Ok::<_, FastGmadError>(())
     })?;
 
-    if let Some(e) = error.lock().unwrap().take() {
+    if let Some(e) = state.lock().unwrap().error.take() {
         return Err(e);
     }
     Ok(())
@@ -337,7 +346,7 @@ struct GmaEntry {
 }
 
 impl GmaEntry {
-    fn new(base_path: &Path, path: Vec<u8>, size: i64) -> Result<Self, FastGmadError> {
+    fn new(base_path: &Path, path: Vec<u8>, size: u64) -> Result<Self, FastGmadError> {
         let size = usize::try_from(size).map_err(|_| {
             let err = std::io::Error::new(
                 std::io::ErrorKind::InvalidData,

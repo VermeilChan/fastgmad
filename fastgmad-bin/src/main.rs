@@ -21,11 +21,13 @@ fn main() {
             log::error!("{err}\n");
             std::process::exit(1);
         }
-        Err(FastGmadBinError::PrintHelp(msg)) => {
-            if let Some(msg) = msg {
-                log::error!("{msg}\n");
-            }
+        Err(FastGmadBinError::PrintHelp(None)) => {
             eprintln!("{}", include_str!("usage.txt"));
+        }
+        Err(FastGmadBinError::PrintHelp(Some(msg))) => {
+            log::error!("{msg}\n");
+            eprintln!("{}", include_str!("usage.txt"));
+            std::process::exit(2);
         }
     }
 }
@@ -68,17 +70,19 @@ fn bin() -> Result<(), FastGmadBinError> {
         };
         extract(conf, ExtractGmadIn::File(PathBuf::from(cmd)))
     } else if cmd.to_str() == Some("extract") {
-        let (conf, input) = ExtractGmaConfig::from_args(args).map_err(|h| FastGmadBinError::PrintHelp(h.0))?;
+        let (conf, input) =
+            ExtractGmaConfig::from_args(args).map_err(|h| FastGmadBinError::PrintHelp(h.0))?;
         extract(conf, input)
     } else {
-        Err(FastGmadBinError::PrintHelp(None))
+        Err(FastGmadBinError::PrintHelp(Some("Unknown command")))
     }
 }
 
 fn extract(conf: ExtractGmaConfig, input: ExtractGmadIn) -> Result<(), FastGmadBinError> {
     match input {
         ExtractGmadIn::File(path) => {
-            let file = File::open(&path).map_err(|e| FastGmadError::io(e, "opening input file", Some(&path)))?;
+            let file =
+                File::open(&path).map_err(|e| FastGmadError::io(e, "opening input file", Some(&path)))?;
             let mut r = BufReader::with_capacity(1 << 20, file);
             fastgmad::extract::extract_gma(&conf, &mut r)?;
         }
