@@ -12,7 +12,10 @@ impl FastGmadError {
             Some(p) => FastGmadErrorKind::PathIoError { path: p.to_path_buf(), error },
             None => FastGmadErrorKind::IoError(error),
         };
-        Self { kind, context: Some(context.to_string()) }
+        Self {
+            kind,
+            context: Some(context.to_string()),
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "binary"), warn(missing_docs))]
-
 const GMA_MAGIC: &[u8] = b"GMAD";
 const GMA_VERSION: u8 = 3;
 

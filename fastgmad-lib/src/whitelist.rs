@@ -77,6 +77,7 @@ const ADDON_WHITELIST: &[&str] = &[
     "shaders/fxc/*.vcs",
 ];
 
+#[inline]
 fn globber(wild: &[u8], path: &[u8]) -> bool {
     let mut w = 0;
     let mut p = 0;
@@ -108,7 +109,23 @@ fn globber(wild: &[u8], path: &[u8]) -> bool {
 }
 
 pub fn check(path: &str) -> bool {
-    ADDON_WHITELIST.iter().any(|glob| globber(glob.as_bytes(), path.as_bytes()))
+    let path_bytes = path.as_bytes();
+
+    let included = ADDON_WHITELIST
+        .iter()
+        .filter(|g| !g.starts_with('!'))
+        .any(|glob| globber(glob.as_bytes(), path_bytes));
+
+    if !included {
+        return false;
+    }
+
+    let excluded = ADDON_WHITELIST
+        .iter()
+        .filter_map(|g| g.strip_prefix('!'))
+        .any(|glob| globber(glob.as_bytes(), path_bytes));
+
+    !excluded
 }
 
 pub fn is_ignored(path: &str, ignore: &[String]) -> bool {
@@ -116,7 +133,7 @@ pub fn is_ignored(path: &str, ignore: &[String]) -> bool {
 }
 
 #[test]
-pub fn test_whitelist() {
+fn test_whitelist() {
     let good = &[
         "lua/test.lua",
         "lua/lol/test.lua",
@@ -138,13 +155,33 @@ pub fn test_whitelist() {
         "materials/lol.vvv",
     ];
 
-    for good in good { assert!(check(good), "{}", good); }
-    for good in ADDON_WHITELIST { assert!(check(&good.replace('*', "test"))); assert!(check(&good.replace('*', "a"))); }
-    for bad in bad { assert!(!check(bad)); }
+    for good in good {
+        assert!(check(good), "{good}");
+    }
+    for glob in ADDON_WHITELIST.iter().filter(|g| !g.starts_with('!')) {
+        assert!(check(&glob.replace('*', "test")), "failed for: {glob}");
+        assert!(check(&glob.replace('*', "a")), "failed for: {glob}");
+    }
+    for bad in bad {
+        assert!(!check(bad));
+    }
+
+    assert!(!check("models/test.sw.vtx"));
+    assert!(!check("models/test.360.vtx"));
+    assert!(!check("models/test.xbox.vtx"));
+    assert!(!check("gamemodes/test/content/models/test.sw.vtx"));
+    assert!(!check("gamemodes/test/content/models/test.360.vtx"));
+    assert!(!check("gamemodes/test/content/models/test.xbox.vtx"));
+
+    assert!(check("models/test.vtx"));
+    assert!(check("gamemodes/test/content/models/test.vtx"));
+
+    assert!(!check("gamemodes/test/sub/something.txt"));
+    assert!(check("gamemodes/test/something.txt"));
 }
 
 #[test]
-pub fn test_ignore() {
+fn test_ignore() {
     assert!(is_ignored("lol.txt", &["lol.txt".to_string()]));
     assert!(is_ignored("lua/hello.lua", &["lua/*.lua".to_string()]));
     assert!(is_ignored("lua/hello.lua", &["lua/*".to_string()]));

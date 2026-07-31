@@ -1,6 +1,4 @@
-use std::{num::NonZeroUsize, path::PathBuf};
-#[cfg(feature = "binary")]
-use crate::util::PrintHelp;
+use std::{ffi::OsString, num::NonZeroUsize, path::PathBuf};
 
 #[derive(Debug)]
 pub struct ExtractGmaConfig {
@@ -16,6 +14,9 @@ pub enum ExtractGmadIn {
     Stdin,
     File(PathBuf),
 }
+
+#[cfg(feature = "binary")]
+pub struct PrintHelp(pub Option<&'static str>);
 
 const DEFAULT_THREADS: NonZeroUsize = NonZeroUsize::new(1).expect("1 is non-zero");
 const DEFAULT_MEMORY: NonZeroUsize = NonZeroUsize::new(1 << 31).expect("2GB is non-zero");
@@ -34,43 +35,58 @@ impl Default for ExtractGmaConfig {
 
 #[cfg(feature = "binary")]
 impl ExtractGmaConfig {
-    pub fn from_args() -> Result<(Self, ExtractGmadIn), PrintHelp> {
+    pub fn from_args(mut args: impl Iterator<Item = OsString>) -> Result<(Self, ExtractGmadIn), PrintHelp> {
         let mut config = Self::default();
-        let mut r#in = None;
-        let mut args = std::env::args_os().skip(2);
-        
+        let mut input = None;
+
         while let Some(arg) = args.next() {
-            match arg.to_str().ok_or(PrintHelp(Some("Unknown GMAD extraction argument")))? {
+            let arg = arg.to_str().ok_or(PrintHelp(Some("Non-UTF-8 argument")))?;
+            match arg {
                 "-max-io-threads" => {
-                    config.max_io_threads = args.next()
+                    config.max_io_threads = args
+                        .next()
                         .and_then(|v| v.to_str().and_then(|s| s.parse().ok()))
                         .ok_or(PrintHelp(Some("Expected integer greater than zero for -max-io-threads")))?;
                 }
                 "-max-io-memory-usage" => {
-                    config.max_io_memory_usage = args.next()
+                    config.max_io_memory_usage = args
+                        .next()
                         .and_then(|v| v.to_str().and_then(|s| s.parse().ok()))
-                        .ok_or(PrintHelp(Some("Expected integer greater than zero for -max-io-memory-usage")))?;
+                        .ok_or(PrintHelp(Some(
+                            "Expected integer greater than zero for -max-io-memory-usage",
+                        )))?;
                 }
                 "-out" => {
-                    config.out = PathBuf::from(args.next().filter(|out| !out.is_empty()).ok_or(PrintHelp(Some("Expected a value after -out")))?);
+                    config.out = PathBuf::from(
+                        args.next()
+                            .filter(|p| !p.is_empty())
+                            .ok_or(PrintHelp(Some("Expected a value after -out")))?,
+                    );
                 }
-                "-stdin" => r#in = Some(ExtractGmadIn::Stdin),
+                "-stdin" => input = Some(ExtractGmadIn::Stdin),
                 "-file" => {
-                    r#in = Some(ExtractGmadIn::File(args.next().filter(|i| !i.is_empty()).map(PathBuf::from).ok_or(PrintHelp(Some("Expected a value after -file")))?));
+                    input = Some(ExtractGmadIn::File(
+                        args.next()
+                            .filter(|p| !p.is_empty())
+                            .map(PathBuf::from)
+                            .ok_or(PrintHelp(Some("Expected a value after -file")))?,
+                    ));
                 }
                 "-noprogress" => config.noprogress = true,
                 _ => return Err(PrintHelp(Some("Unknown GMAD extraction argument"))),
             }
         }
 
-        let r#in = r#in.ok_or(PrintHelp(Some("Please provide an input path")))?;
+        let input = input.ok_or(PrintHelp(Some("Please provide an input path")))?;
 
         if config.out.as_os_str().is_empty() {
-            if let ExtractGmadIn::File(path) = &r#in {
+            if let ExtractGmadIn::File(path) = &input {
                 let mut dir = path.to_owned();
                 dir.set_extension("");
                 if dir.exists() && !dir.is_dir() {
-                    return Err(PrintHelp(Some("Default output path exists as a file. Please specify an output folder with -out")));
+                    return Err(PrintHelp(Some(
+                        "Default output path exists as a file. Please specify an output folder with -out",
+                    )));
                 }
                 config.out = dir;
             } else {
@@ -78,6 +94,6 @@ impl ExtractGmaConfig {
             }
         }
 
-        Ok((config, r#in))
+        Ok((config, input))
     }
 }

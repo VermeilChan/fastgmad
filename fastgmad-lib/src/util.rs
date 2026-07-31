@@ -1,7 +1,7 @@
 use std::io::{BufRead, Read, Result};
 
 pub trait BufReadEx: BufRead {
-    fn read_nul_str<'a>(&mut self, buf: &'a mut Vec<u8>) -> Result<&'a mut [u8]> {
+    fn read_nul_str<'a>(&mut self, buf: &'a mut Vec<u8>) -> Result<&'a [u8]> {
         buf.clear();
         self.read_until(0, buf)?;
         if buf.last() == Some(&0) {
@@ -35,11 +35,15 @@ impl<R: BufRead + ?Sized> BufReadEx for R {}
 
 pub trait ReadSkip: Read {
     fn skip(&mut self, bytes: u64) -> Result<()> {
-        std::io::copy(&mut self.take(bytes), &mut std::io::sink()).map(|_| ())
+        let n = std::io::copy(&mut self.take(bytes), &mut std::io::sink())?;
+        if n != bytes {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("expected to skip {bytes} bytes, only got {n}"),
+            ));
+        }
+        Ok(())
     }
 }
 
 impl<R: Read + ?Sized> ReadSkip for R {}
-
-#[cfg(feature = "binary")]
-pub struct PrintHelp(pub Option<&'static str>);
