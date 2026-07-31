@@ -126,11 +126,3 @@ impl From<FastGmadError> for FastGmadBinError {
         Self::FastGmadError(e)
     }
 }
-
-impl From<PrintHelp> for FastGmadBinError {
-    fn from(e: PrintHelp) -> Self {
-        Self::PrintHelp(e.0)
-    }
-}
-
-struct PrintHelp(Option<&'static str>);
