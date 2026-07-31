@@ -5,8 +5,6 @@ pub struct ExtractGmaConfig {
     pub out: PathBuf,
     pub max_io_threads: NonZeroUsize,
     pub max_io_memory_usage: NonZeroUsize,
-    #[cfg(feature = "binary")]
-    pub noprogress: bool,
 }
 
 #[cfg(feature = "binary")]
@@ -27,8 +25,6 @@ impl Default for ExtractGmaConfig {
             out: PathBuf::new(),
             max_io_threads: std::thread::available_parallelism().unwrap_or(DEFAULT_THREADS),
             max_io_memory_usage: DEFAULT_MEMORY,
-            #[cfg(feature = "binary")]
-            noprogress: false,
         }
     }
 }
@@ -72,7 +68,6 @@ impl ExtractGmaConfig {
                             .ok_or(PrintHelp(Some("Expected a value after -file")))?,
                     ));
                 }
-                "-noprogress" => config.noprogress = true,
                 _ => return Err(PrintHelp(Some("Unknown GMAD extraction argument"))),
             }
         }

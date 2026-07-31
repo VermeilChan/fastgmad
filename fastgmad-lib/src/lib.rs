@@ -5,4 +5,3 @@ mod util;
 
 pub mod error;
 pub mod extract;
-pub mod whitelist;

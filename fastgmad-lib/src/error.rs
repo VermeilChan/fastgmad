@@ -34,12 +34,6 @@ impl std::error::Error for FastGmadError {}
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum FastGmadErrorKind {
-    #[error("File {0} not in GMA whitelist - see https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h")]
-    EntryNotWhitelisted(String),
-
-    #[error("JSON error ({0})")]
-    JsonError(#[from] serde_json::Error),
-
     #[error("I/O error ({0})")]
     IoError(std::io::Error),
 

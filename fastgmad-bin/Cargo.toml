@@ -21,5 +21,5 @@ path = "src/main.rs"
 fastgmad = { path = "../fastgmad-lib", features = ["binary"] }
 log = "0.4.33"
 
-[build-dependencies]
+[target.'cfg(target_os = "windows")'.build-dependencies]
 winresource = "0.1.31"
