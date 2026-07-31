@@ -1,13 +1,13 @@
 [package]
 name = "fastgmad-bin"
-version = "0.2.11"
+version = "0.4.0"
 edition = "2024"
-authors = ["William Venner, VermeilChan"]
+authors = ["William Venner, Mitra-88"]
 license = "MIT OR Apache-2.0"
 description = "Fast gmad implementation"
 repository = "https://github.com/Mitra-88/fastgmad"
 publish = false
-resolver = "2"
+resolver = "3"
 
 [features]
 default = ["binary"]
