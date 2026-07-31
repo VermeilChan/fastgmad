@@ -16,14 +16,28 @@ pub enum ExtractGmadIn {
 #[cfg(feature = "binary")]
 pub struct PrintHelp(pub Option<&'static str>);
 
-const DEFAULT_THREADS: NonZeroUsize = NonZeroUsize::new(1).expect("1 is non-zero");
 const DEFAULT_MEMORY: NonZeroUsize = NonZeroUsize::new(1 << 31).expect("2GB is non-zero");
+const MIN_THREADS: usize = 1;
+const MAX_THREADS: usize = 32;
+const RESERVED_THREADS: usize = 2;
+
+fn get_default_threads() -> NonZeroUsize {
+    let available = std::thread::available_parallelism()
+        .map(NonZeroUsize::get)
+        .unwrap_or(MIN_THREADS);
+
+    let threads = available
+        .saturating_sub(RESERVED_THREADS)
+        .clamp(MIN_THREADS, MAX_THREADS);
+
+    NonZeroUsize::new(threads).expect("clamped value is guaranteed to be >= 1")
+}
 
 impl Default for ExtractGmaConfig {
     fn default() -> Self {
         Self {
             out: PathBuf::new(),
-            max_io_threads: std::thread::available_parallelism().unwrap_or(DEFAULT_THREADS),
+            max_io_threads: get_default_threads(),
             max_io_memory_usage: DEFAULT_MEMORY,
         }
     }
