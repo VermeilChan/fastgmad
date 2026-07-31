@@ -50,6 +50,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: fastgmad-${{ matrix.artifact_suffix }}
+          name: FastGmad-${{ matrix.artifact_suffix }}
           path: |
             ./target/release/fastgmad${{ matrix.exe_ext }}
