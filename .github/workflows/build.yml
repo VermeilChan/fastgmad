@@ -18,7 +18,7 @@ jobs:
             exe_ext: ""
 
           - os: macos-latest
-            artifact_suffix: macOS-ARM64
+            artifact_suffix: macOS-ARM64-AppleSilicon
             exe_ext: ""
 
     runs-on: ${{ matrix.os }}
