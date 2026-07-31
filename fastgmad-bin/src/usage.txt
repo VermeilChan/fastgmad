@@ -1,4 +1,4 @@
-FastGMAD
+FastGMAD ⚡
 
 Extracting GMAs
 ---------------

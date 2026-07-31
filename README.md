@@ -12,16 +12,15 @@ An extremely fast reimplementation of gmad.exe.
 ## Usage
 <!--BEGINUSAGE><!-->
 ```
-FastGMAD
+FastGMAD ⚡
 
 Extracting GMAs
 ---------------
 fastgmad extract -file path/to/gma.gma -out path/to/folder
 fastgmad extract -file path/to/gma.gma
 fastgmad extract -stdin -out path/to/folder
-
 ```
 <!--ENDUSAGE><!-->
 
 <br/>
-<p align="center"><img src="https://i.imgur.com/Un4akZe.gif"/></p>
+<p align="center"><img src="giphy.gif"/></p>
