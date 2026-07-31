@@ -23,4 +23,4 @@ fastgmad extract -stdin -out path/to/folder
 <!--ENDUSAGE><!-->
 
 <br/>
-<p align="center"><img src="giphy.gif"/></p>
+<p align="center"><img src="assets/giphy.gif"/></p>
